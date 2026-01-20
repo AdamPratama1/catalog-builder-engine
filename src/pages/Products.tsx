@@ -1,7 +1,10 @@
+import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/products/ProductCard";
+import RichTextEditor from "@/components/ui/RichTextEditor";
+import DOMPurify from "dompurify";
 import { categories, getProductsByCategory, getCategoryBySlug, products } from "@/data/products";
 import { Server, Network, Laptop, Printer, Mouse, Cloud, Wifi, Monitor, ChevronRight } from "lucide-react";
 
@@ -17,6 +20,7 @@ const iconMap: { [key: string]: any } = {
 };
 
 const Products = () => {
+  const [editorValue, setEditorValue] = useState<string>("");
   const { categorySlug } = useParams();
   const currentCategory = categorySlug ? getCategoryBySlug(categorySlug) : null;
   const displayProducts = categorySlug ? getProductsByCategory(categorySlug) : products;
@@ -61,6 +65,21 @@ const Products = () => {
             </div>
           </div>
         </section>
+
+        {/* Editor demo */}
+        <div className="container mx-auto px-4 py-6">
+          <div className="max-w-3xl">
+            <h3 className="text-lg font-medium mb-2">Editor Deskripsi (Demo)</h3>
+            <RichTextEditor value={editorValue} onChange={setEditorValue} placeholder="Tulis deskripsi..." />
+            <div className="mt-4">
+              <h4 className="font-medium">Preview</h4>
+              <div
+                className="prose max-w-none"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editorValue) }}
+              />
+            </div>
+          </div>
+        </div>
 
         <div className="container mx-auto px-4 py-12">
           <div className="grid lg:grid-cols-4 gap-8">
