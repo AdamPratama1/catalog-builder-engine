@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/products/ProductCard";
@@ -22,8 +22,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { lsGet, lsSet } from "@/lib/utils";
+import { isAdmin } from "@/lib/auth";
 
-const iconMap: { [key: string]: any } = {
+/* ================= ICON MAP ================= */
+
+const iconMap: Record<string, any> = {
   Server,
   Network,
   Laptop,
@@ -34,33 +37,64 @@ const iconMap: { [key: string]: any } = {
   Monitor,
 };
 
+/* ================= UTILS ================= */
+
 const cleanHtml = (html: string) =>
   html
-    ? html.replace(/<p><br><\/p>/gi, "").replace(/<p><\/p>/gi, "").replace(/&nbsp;/gi, "").trim()
+    ? html
+        .replace(/<p><br><\/p>/gi, "")
+        .replace(/<p><\/p>/gi, "")
+        .replace(/&nbsp;/gi, "")
+        .trim()
     : "";
+
+/* ================= COMPONENT ================= */
 
 const Products = () => {
   const { categorySlug } = useParams();
+  const navigate = useNavigate();
+
   const [productList, setProductList] = useState<any[]>(() =>
     lsGet<any[]>("products.data", initialProducts) ?? initialProducts
   );
+
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [editedProduct, setEditedProduct] = useState<any>(null);
 
-  const currentCategory = categorySlug ? getCategoryBySlug(categorySlug) : null;
+  const currentCategory = categorySlug
+    ? getCategoryBySlug(categorySlug)
+    : null;
+
   const displayProducts = categorySlug
     ? productList.filter((p) => p.category === categorySlug)
     : productList;
 
+  /* ================= HANDLERS ================= */
+
   const handleEdit = (product: any) => {
+    if (!isAdmin()) {
+      navigate("/login");
+      return;
+    }
     setEditingProductId(product.id);
     setEditedProduct({ ...product });
   };
 
   const handleSave = () => {
+    if (!isAdmin()) {
+      navigate("/login");
+      return;
+    }
+
     const updatedProducts = productList.map((p) =>
-      p.id === editingProductId ? { ...editedProduct, description: cleanHtml(editedProduct.description) } : p
+      p.id === editingProductId
+        ? {
+            ...editedProduct,
+            description: cleanHtml(editedProduct.description),
+          }
+        : p
     );
+
     setProductList(updatedProducts);
     lsSet("products.data", updatedProducts);
     setEditingProductId(null);
@@ -76,62 +110,100 @@ const Products = () => {
     setEditedProduct({ ...editedProduct, [field]: value });
 
   const updateSpec = (index: number, value: string) => {
-    const newSpecs = [...editedProduct.specs];
-    newSpecs[index] = value;
-    setEditedProduct({ ...editedProduct, specs: newSpecs });
+    const specs = [...editedProduct.specs];
+    specs[index] = value;
+    setEditedProduct({ ...editedProduct, specs });
   };
 
   const removeSpec = (index: number) =>
-    setEditedProduct({ ...editedProduct, specs: editedProduct.specs.filter((_: string, i: number) => i !== index) });
+    setEditedProduct({
+      ...editedProduct,
+      specs: editedProduct.specs.filter((_: string, i: number) => i !== index),
+    });
 
-  const addSpec = () => setEditedProduct({ ...editedProduct, specs: [...editedProduct.specs, ""] });
+  const addSpec = () =>
+    setEditedProduct({
+      ...editedProduct,
+      specs: [...editedProduct.specs, ""],
+    });
+
+  /* ================= RENDER ================= */
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
       <main className="pt-24 md:pt-32">
+        {/* ===== Breadcrumb ===== */}
         <div className="bg-muted/50 border-b border-border">
           <div className="container mx-auto px-4 py-4">
             <nav className="flex items-center gap-2 text-sm">
-              <Link to="/" className="text-muted-foreground hover:text-foreground">Home</Link>
+              <Link
+                to="/"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Home
+              </Link>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <Link to="/products" className={!categorySlug ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}>
+              <Link
+                to="/products"
+                className={
+                  !categorySlug
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }
+              >
                 Produk
               </Link>
               {currentCategory && (
                 <>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-foreground font-medium">{currentCategory.name}</span>
+                  <span className="text-foreground font-medium">
+                    {currentCategory.name}
+                  </span>
                 </>
               )}
             </nav>
           </div>
         </div>
 
+        {/* ===== Header ===== */}
         <section className="py-12 bg-gradient-to-b from-muted/50 to-background">
           <div className="container mx-auto px-4">
             <h1 className="text-4xl font-bold mb-3">
               {currentCategory ? currentCategory.name : "Semua Produk"}
             </h1>
             <p className="text-muted-foreground">
-              {currentCategory ? currentCategory.description : "Jelajahi berbagai produk IT berkualitas"}
+              {currentCategory
+                ? currentCategory.description
+                : "Jelajahi berbagai produk IT berkualitas"}
             </p>
           </div>
         </section>
 
+        {/* ===== Content ===== */}
         <div className="container mx-auto px-4 py-12">
           <div className="grid lg:grid-cols-4 gap-8">
+            {/* Sidebar */}
             <aside className="lg:col-span-1">
               <div className="sticky top-28">
                 <h2 className="font-semibold mb-4">Kategori</h2>
                 <nav className="space-y-1">
-                  <Link to="/products" className="flex items-center gap-3 px-4 py-3 rounded-lg bg-muted">
+                  <Link
+                    to="/products"
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg bg-muted"
+                  >
                     <Server className="h-5 w-5" /> Semua Produk
                   </Link>
+
                   {categories.map((cat) => {
                     const Icon = iconMap[cat.icon] || Server;
                     return (
-                      <Link key={cat.id} to={`/products/${cat.slug}`} className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted">
+                      <Link
+                        key={cat.id}
+                        to={`/products/${cat.slug}`}
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted"
+                      >
                         <Icon className="h-5 w-5" /> {cat.name}
                       </Link>
                     );
@@ -140,62 +212,118 @@ const Products = () => {
               </div>
             </aside>
 
+            {/* Products */}
             <div className="lg:col-span-3">
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {displayProducts.map((product) =>
                   editingProductId === product.id ? (
-                    <div key={product.id} className="border rounded-xl p-4 space-y-3 bg-muted">
+                    /* ===== EDIT MODE ===== */
+                    <div
+                      key={product.id}
+                      className="border rounded-xl p-4 space-y-3 bg-muted"
+                    >
                       {["name", "brand", "price", "image"].map((field) => (
                         <input
                           key={field}
-                          type="text"
                           value={editedProduct[field]}
-                          onChange={(e) => updateField(field, e.target.value)}
-                          className="w-full border px-3 py-2 rounded"
-                          placeholder={
-                            field === "name" ? "Nama Produk" :
-                            field === "brand" ? "Brand" :
-                            field === "price" ? "Harga" : "URL Gambar"
+                          onChange={(e) =>
+                            updateField(field, e.target.value)
                           }
+                          className="w-full border px-3 py-2 rounded"
+                          placeholder={field}
                         />
                       ))}
-                      <select value={editedProduct.category} onChange={(e) => updateField("category", e.target.value)} className="w-full border px-3 py-2 rounded">
+
+                      <select
+                        value={editedProduct.category}
+                        onChange={(e) =>
+                          updateField("category", e.target.value)
+                        }
+                        className="w-full border px-3 py-2 rounded"
+                      >
                         {categories.map((cat) => (
-                          <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                          <option key={cat.id} value={cat.slug}>
+                            {cat.name}
+                          </option>
                         ))}
                       </select>
+
+                      {/* Specs */}
                       <div>
-                        <label className="block text-sm font-medium mb-1">Spesifikasi:</label>
-                        {editedProduct.specs.map((spec: string, index: number) => (
-                          <div key={index} className="flex gap-2 mb-2">
-                            <input
-                              type="text"
-                              value={spec}
-                              onChange={(e) => updateSpec(index, e.target.value)}
-                              className="flex-1 border px-3 py-2 rounded"
-                              placeholder="Spesifikasi"
-                            />
-                            <button onClick={() => removeSpec(index)} className="px-2 py-1 bg-red-500 text-white rounded">Hapus</button>
-                          </div>
-                        ))}
-                        <button onClick={addSpec} className="px-3 py-1 bg-green-500 text-white rounded text-sm">Tambah Spesifikasi</button>
+                        <p className="text-sm font-medium mb-1">
+                          Spesifikasi
+                        </p>
+                        {editedProduct.specs.map(
+                          (spec: string, i: number) => (
+                            <div key={i} className="flex gap-2 mb-2">
+                              <input
+                                value={spec}
+                                onChange={(e) =>
+                                  updateSpec(i, e.target.value)
+                                }
+                                className="flex-1 border px-3 py-2 rounded"
+                              />
+                              <button
+                                onClick={() => removeSpec(i)}
+                                className="px-3 bg-red-500 text-white rounded"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          )
+                        )}
+                        <button
+                          onClick={addSpec}
+                          className="text-sm px-3 py-1 bg-green-500 text-white rounded"
+                        >
+                          Tambah Spesifikasi
+                        </button>
                       </div>
-                      <RichTextEditor value={editedProduct.description || ""} onChange={(value) => updateField("description", value)} />
+
+                      <RichTextEditor
+                        value={editedProduct.description || ""}
+                        onChange={(v) =>
+                          updateField("description", v)
+                        }
+                      />
+
                       <div className="flex gap-2">
-                        <button onClick={handleSave} className="px-4 py-2 bg-primary text-primary-foreground rounded">Simpan</button>
-                        <button onClick={handleCancel} className="px-4 py-2 bg-muted rounded">Batal</button>
+                        <button
+                          onClick={handleSave}
+                          className="flex-1 bg-primary text-primary-foreground py-2 rounded"
+                        >
+                          Simpan
+                        </button>
+                        <button
+                          onClick={handleCancel}
+                          className="flex-1 bg-muted py-2 rounded"
+                        >
+                          Batal
+                        </button>
                       </div>
                     </div>
                   ) : (
+                    /* ===== VIEW MODE ===== */
                     <div key={product.id} className="relative">
                       <ProductCard
                         product={{
                           ...product,
-                          description: cleanHtml(product.description) === "" ? "" : DOMPurify.sanitize(cleanHtml(product.description)),
+                          description: DOMPurify.sanitize(
+                            cleanHtml(product.description)
+                          ),
                         }}
                       />
-                      <button onClick={() => handleEdit(product)} className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 rounded text-xs">
-                        Edit Produk
+
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className={`absolute top-3 right-3 px-3 py-1 rounded text-xs
+                          ${
+                            isAdmin()
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                      >
+                        {isAdmin() ? "Edit Produk" : "Login untuk Edit"}
                       </button>
                     </div>
                   )
@@ -205,6 +333,7 @@ const Products = () => {
           </div>
         </div>
       </main>
+
       <Footer />
     </div>
   );

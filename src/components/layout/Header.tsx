@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ChevronDown, Phone, Mail } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, ChevronDown, Phone, Mail, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { categories } from "@/data/products";
+import { useAuth } from "@/context/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, logout, user } = useAuth();
 
   const navLinks = [
     { name: "Home", path: "/" },
@@ -116,11 +119,37 @@ const Header = () => {
 
           {/* CTA Button */}
           <div className="hidden lg:flex items-center gap-4">
-            <Button asChild>
-              <a href="https://wa.me/6281212951737?text=Hai%20Mentarisatria%20saya%20ingin%20konsultasi" target="_blank" rel="noopener noreferrer">
-                Konsultasi Gratis
-              </a>
-            </Button>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary">
+                  <User size={16} className="text-secondary-foreground" />
+                  <span className="text-sm font-medium text-secondary-foreground">{user}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to="/login">Masuk</Link>
+                </Button>
+                <Button asChild>
+                  <a href="https://wa.me/6281212951737?text=Hai%20Mentarisatria%20saya%20ingin%20konsultasi" target="_blank" rel="noopener noreferrer">
+                    Konsultasi Gratis
+                  </a>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -186,11 +215,37 @@ const Header = () => {
               </div>
             ))}
             <div className="pt-4 border-t border-border">
-              <Button className="w-full" asChild>
-                <a href="https://wa.me/6281212951737?text=Hai%20Mentarisatria%20saya%20ingin%20konsultasi" target="_blank" rel="noopener noreferrer">
-                  Konsultasi Gratis
-                </a>
-              </Button>
+              {isAuthenticated ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary">
+                    <User size={16} className="text-secondary-foreground" />
+                    <span className="text-sm font-medium text-secondary-foreground">{user}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full flex items-center justify-center gap-2"
+                    onClick={() => {
+                      logout();
+                      navigate("/");
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <LogOut size={16} />
+                    Logout
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link to="/login" onClick={() => setIsMenuOpen(false)}>Masuk</Link>
+                  </Button>
+                  <Button className="w-full" asChild>
+                    <a href="https://wa.me/6281212951737?text=Hai%20Mentarisatria%20saya%20ingin%20konsultasi" target="_blank" rel="noopener noreferrer">
+                      Konsultasi Gratis
+                    </a>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
