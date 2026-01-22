@@ -11,7 +11,7 @@ import Products from "./pages/Products";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import Contact from "./pages/Contact";
-import Login from "./pages/Login";
+import Login from "./pages/login";
 import NotFound from "./pages/NotFound";
 
 // Setup React Query untuk state management

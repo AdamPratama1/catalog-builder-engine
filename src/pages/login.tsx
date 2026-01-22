@@ -136,7 +136,7 @@ const Login = () => {
               </div>
 
               {/* Card Form Login */}
-              <div className="bg-card rounded-2xl shadow-elevated border border-border p-8 md:p-10 backdrop-blur-sm bg-card/95">
+              <div className="bg-card/95 rounded-2xl shadow-elevated border border-border p-8 md:p-10 backdrop-blur-sm">
                 <h2 className="text-2xl font-bold mb-2 text-foreground">Masuk ke Akun Anda</h2>
                 <p className="text-muted-foreground mb-8">Masukkan kredensial admin untuk akses penuh</p>
 
