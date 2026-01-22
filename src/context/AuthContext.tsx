@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { login as authLogin, logout as authLogout, getUser, isLoggedIn } from '@/lib/auth';
 
 /**
  * Tipe data untuk Context Autentikasi
@@ -20,18 +21,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  * Menyimpan data login di localStorage agar bertahan saat page refresh
  */
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(isLoggedIn());
+  const [user, setUser] = useState<string | null>(getUser()?.username || null);
 
   // Saat pertama kali load, cek apakah user sudah login sebelumnya
   useEffect(() => {
-    const savedAuth = localStorage.getItem('isAuthenticated');
-    const savedUser = localStorage.getItem('user');
-    
-    if (savedAuth === 'true' && savedUser) {
-      setIsAuthenticated(true);
-      setUser(savedUser);
-    }
+    setIsAuthenticated(isLoggedIn());
+    setUser(getUser()?.username || null);
   }, []);
 
   /**
@@ -40,14 +36,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
    * Return true jika login berhasil
    */
   const login = (username: string, password: string): boolean => {
-    const VALID_USERNAME = 'adminteamc';
-    const VALID_PASSWORD = 'sgkteamc';
-    
-    if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+    const user = authLogin(username, password);
+    if (user) {
       setIsAuthenticated(true);
-      setUser(username);
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', username);
+      setUser(user.username);
       return true;
     }
     return false;
@@ -58,10 +50,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
    * Hapus semua data login dan session
    */
   const logout = () => {
+    authLogout();
     setIsAuthenticated(false);
     setUser(null);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
   };
 
   return (
